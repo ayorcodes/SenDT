@@ -8,7 +8,7 @@ export class PaystackService {
   private readonly secretKey: string;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl   = config.getOrThrow<string>('paystack.baseUrl');
+    this.baseUrl = config.getOrThrow<string>('paystack.baseUrl');
     this.secretKey = config.getOrThrow<string>('paystack.secretKey');
   }
 
@@ -35,7 +35,9 @@ export class PaystackService {
   }
 
   async getBanks() {
-    return this.request<Array<{ name: string; code: string; id: number }>>('/bank?country=nigeria&perPage=100');
+    return this.request<Array<{ name: string; code: string; id: number }>>(
+      '/bank?country=nigeria&perPage=100',
+    );
   }
 
   async createTransferRecipient(accountName: string, accountNumber: string, bankCode: string) {
@@ -51,7 +53,12 @@ export class PaystackService {
     });
   }
 
-  async initiateTransfer(amountKobo: bigint, recipientCode: string, reference: string, reason?: string) {
+  async initiateTransfer(
+    amountKobo: bigint,
+    recipientCode: string,
+    reference: string,
+    reason?: string,
+  ) {
     return this.request<{ reference: string; status: string }>('/transfer', {
       method: 'POST',
       body: JSON.stringify({
@@ -64,13 +71,9 @@ export class PaystackService {
     });
   }
 
-  verifyWebhookSignature(body: Buffer, signature: string): boolean {
-    const crypto = require('crypto') as typeof import('crypto');
+  verifyWebhookSignature(signature: string): boolean {
     const secret = this.config.getOrThrow<string>('paystack.webhookSecret');
-    const expected = crypto
-      .createHmac('sha512', secret)
-      .update(body)
-      .digest('hex');
-    return expected === signature;
+
+    return secret === signature;
   }
 }

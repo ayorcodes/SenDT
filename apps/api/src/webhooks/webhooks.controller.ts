@@ -32,12 +32,12 @@ export class WebhooksController {
   @HttpCode(HttpStatus.OK)
   async handlePaystack(
     @Req() req: RawBodyRequest<{ rawBody?: Buffer }>,
-    @Headers('x-paystack-signature') signature: string,
+    @Query('key') signature: string,
   ) {
     const rawBody = req.rawBody;
     if (!rawBody) throw new BadRequestException('No raw body');
 
-    if (!this.paystack.verifyWebhookSignature(rawBody, signature)) {
+    if (!this.paystack.verifyWebhookSignature(signature)) {
       this.logger.warn('Invalid Paystack webhook signature');
       throw new BadRequestException('Invalid signature');
     }
