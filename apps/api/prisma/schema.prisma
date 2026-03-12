@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum KYCStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum Asset {
+  USDT
+  USDC
+  ETH
+  BTC
+}
+
+enum Chain {
+  ETHEREUM
+  TRON
+  BITCOIN
+}
+
+enum TransactionType {
+  DEPOSIT
+  TRANSFER
+  CONVERSION
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  phone        String    @unique
+  name         String
+  passwordHash String    @map("password_hash")
+  kycStatus    KYCStatus @default(PENDING) @map("kyc_status")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  refreshTokens  RefreshToken[]
+  wallets        Wallet[]
+  fiatBalance    FiatBalance?
+  cryptoBalances CryptoBalance[]
+  transactions   Transaction[]
+  bankAccounts   BankAccount[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Wallet {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  chain           Chain
+  address         String   @unique
+  turnkeyWalletId String   @map("turnkey_wallet_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chain])
+  @@map("wallets")
+}
+
+model FiatBalance {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  amountKobo BigInt  @default(0) @map("amount_kobo")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("fiat_balances")
+}
+
+model CryptoBalance {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  asset         Asset
+  amountRaw     String   @default("0") @map("amount_raw")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, asset])
+  @@map("crypto_balances")
+}
+
+model Transaction {
+  id            String            @id @default(uuid())
+  userId        String            @map("user_id")
+  type          TransactionType
+  status        TransactionStatus @default(PENDING)
+  asset         Asset?
+  amountRaw     String?           @map("amount_raw")
+  amountKobo    BigInt?           @map("amount_kobo")
+  rateKobo      BigInt?           @map("rate_kobo")
+  recipientName String?           @map("recipient_name")
+  recipientBank String?           @map("recipient_bank")
+  recipientAcct String?           @map("recipient_acct")
+  paystackRef   String?           @unique @map("paystack_ref")
+  txHash        String?           @map("tx_hash")
+  idempotencyKey String?          @unique @map("idempotency_key")
+  metadata      Json?
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  user         User           @relation(fields: [userId], references: [id])
+  ledgerEntries LedgerEntry[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status])
+  @@map("transactions")
+}
+
+model LedgerEntry {
+  id            String   @id @default(uuid())
+  transactionId String   @map("transaction_id")
+  userId        String   @map("user_id")
+  amountKobo    BigInt   @map("amount_kobo")
+  balanceBefore BigInt   @map("balance_before")
+  balanceAfter  BigInt   @map("balance_after")
+  description   String
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("ledger_entries")
+}
+
+model ProcessedEvent {
+  id          String   @id
+  source      String
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@map("processed_events")
+}
+
+model BankAccount {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  bankCode      String   @map("bank_code")
+  bankName      String   @map("bank_name")
+  accountNumber String   @map("account_number")
+  accountName   String   @map("account_name")
+  isDefault     Boolean  @default(false) @map("is_default")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("bank_accounts")
+}
+
+model Rate {
+  id        String   @id @default(uuid())
+  asset     Asset    @unique
+  rateKobo  BigInt   @map("rate_kobo")
+  source    String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("rates")
+}

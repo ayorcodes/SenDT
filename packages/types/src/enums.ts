@@ -1,0 +1,38 @@
+export enum KYCStatus {
+  PENDING = 'PENDING',
+  VERIFIED = 'VERIFIED',
+  REJECTED = 'REJECTED',
+}
+
+export enum Asset {
+  USDT = 'USDT',
+  USDC = 'USDC',
+  ETH = 'ETH',
+  BTC = 'BTC',
+}
+
+export enum Chain {
+  ETHEREUM = 'ETHEREUM',
+  TRON = 'TRON',
+  BITCOIN = 'BITCOIN',
+}
+
+export enum TransactionType {
+  DEPOSIT = 'DEPOSIT',
+  TRANSFER = 'TRANSFER',
+  CONVERSION = 'CONVERSION',
+}
+
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
+export enum EventType {
+  DEPOSIT_CONFIRMED = 'DEPOSIT_CONFIRMED',
+  TRANSFER_COMPLETED = 'TRANSFER_COMPLETED',
+  TRANSFER_FAILED = 'TRANSFER_FAILED',
+  RATE_UPDATED = 'RATE_UPDATED',
+}
