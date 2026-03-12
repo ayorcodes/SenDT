@@ -65,9 +65,6 @@ export class WebhooksController {
 
     const body = JSON.parse(rawBody.toString());
     this.logger.log(`Moralis stream event: ${body.streamId}`);
-
-    console.log(body);
-
     // Only process confirmed blocks
     if (body.confirmed) {
       await this.deposits.handleMoralisStream(body);
